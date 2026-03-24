@@ -32,4 +32,7 @@ public class Device {
     @CreationTimestamp
     @Column(name = "creation_time", nullable = false, updatable = false)
     private OffsetDateTime creationTime;
+
+    @Version
+    private Long version;
 }

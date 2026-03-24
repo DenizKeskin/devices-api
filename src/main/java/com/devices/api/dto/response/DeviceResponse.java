@@ -22,5 +22,7 @@ public class DeviceResponse {
 
     private DeviceState state;
 
+    private Long version;
+
     private OffsetDateTime creationTime;
 }

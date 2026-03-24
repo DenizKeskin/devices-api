@@ -22,4 +22,7 @@ public class UpdateDeviceRequest {
 
     @NotNull(message = "State is required")
     private DeviceState state;
+
+    @NotNull(message = "Version is required")
+    private Long version;
 }

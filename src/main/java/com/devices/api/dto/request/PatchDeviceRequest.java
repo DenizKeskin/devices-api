@@ -1,6 +1,7 @@
 package com.devices.api.dto.request;
 
 import com.devices.api.model.DeviceState;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,4 +18,7 @@ public class PatchDeviceRequest {
     private String brand;
 
     private DeviceState state;
+
+    @NotNull(message = "Version is required")
+    private Long version;
 }
