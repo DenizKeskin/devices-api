@@ -13,12 +13,14 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class PatchDeviceRequest {
 
+    @NotNull(message = "Version must be provided for patch operations")
+    private Long version;
+
     private String name;
 
     private String brand;
 
     private DeviceState state;
 
-    @NotNull(message = "Version is required")
-    private Long version;
+
 }
