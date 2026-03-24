@@ -19,7 +19,4 @@ public class CreateDeviceRequest {
 
     @NotBlank(message = "Brand is required")
     private String brand;
-
-    @NotNull(message = "State is required")
-    private DeviceState state;
 }
