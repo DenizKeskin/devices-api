@@ -227,6 +227,21 @@ class DeviceControllerTest {
     }
 
     @Test
+    void patchDevice_shouldReturn409_whenInUseAndBrandChanged() throws Exception {
+        Device device = saveDevice("Galaxy S24", "Samsung", DeviceState.IN_USE);
+        PatchDeviceRequest request = PatchDeviceRequest.builder()
+                .version(device.getVersion())
+                .brand("Apple")
+                .build();
+
+        mockMvc.perform(patch("/api/v1/devices/{id}", device.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409));
+    }
+
+    @Test
     void patchDevice_shouldReturn200_whenInUseAndOnlyStateChanged() throws Exception {
         Device device = saveDevice("Galaxy S24", "Samsung", DeviceState.IN_USE);
         PatchDeviceRequest request = PatchDeviceRequest.builder()
@@ -239,6 +254,37 @@ class DeviceControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.state").value("AVAILABLE"));
+    }
+
+    // ── Domain Validation Coverage ────────────────────────────────────────────
+
+    @Test
+    void createDevice_shouldReturn201_andCreationTimeIsSet() throws Exception {
+        CreateDeviceRequest request = new CreateDeviceRequest("Galaxy S24", "Samsung");
+
+        mockMvc.perform(post("/api/v1/devices")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.creationTime").isNotEmpty());
+    }
+
+    // ── Exception Handler Coverage ────────────────────────────────────────────
+
+    @Test
+    void request_shouldReturn400_whenBodyIsMalformedJson() throws Exception {
+        mockMvc.perform(post("/api/v1/devices")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{invalid-json}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    void request_shouldReturn400_whenStateParamIsInvalid() throws Exception {
+        mockMvc.perform(get("/api/v1/devices").param("state", "INVALID_STATE"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
     }
 
     // ── DELETE /api/v1/devices/{id} ───────────────────────────────────────────
