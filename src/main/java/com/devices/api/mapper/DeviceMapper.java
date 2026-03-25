@@ -6,8 +6,6 @@ import com.devices.api.model.Device;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-import java.util.List;
-
 @Mapper(componentModel = "spring")
 public interface DeviceMapper {
 
@@ -16,6 +14,4 @@ public interface DeviceMapper {
     Device toEntity(CreateDeviceRequest request);
 
     DeviceResponse toResponse(Device device);
-
-    List<DeviceResponse> toResponseList(List<Device> devices);
 }
