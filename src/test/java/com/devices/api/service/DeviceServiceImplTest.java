@@ -16,6 +16,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -184,38 +189,44 @@ class DeviceServiceImplTest {
     // ── findAll / findByBrand / findByState ───────────────────────────────────
 
     @Test
-    void findAll_shouldReturnAllDevices() {
+    void findAll_shouldReturnPagedDevices() {
+        Pageable pageable = PageRequest.of(0, 10);
         List<Device> devices = List.of(Device.builder().id(1L).build(), Device.builder().id(2L).build());
-        List<DeviceResponse> expected = List.of(DeviceResponse.builder().id(1L).build(), DeviceResponse.builder().id(2L).build());
+        Page<Device> devicePage = new PageImpl<>(devices, pageable, 2);
 
-        when(deviceRepository.findAll()).thenReturn(devices);
-        when(deviceMapper.toResponseList(devices)).thenReturn(expected);
+        when(deviceRepository.findAll(pageable)).thenReturn(devicePage);
+        when(deviceMapper.toResponse(any(Device.class))).thenReturn(DeviceResponse.builder().id(1L).build());
 
-        assertThat(deviceService.findAll()).hasSize(2);
+        Page<DeviceResponse> result = deviceService.findAll(pageable);
+        assertThat(result.getTotalElements()).isEqualTo(2);
+        assertThat(result.getContent()).hasSize(2);
     }
 
     @Test
-    void findByBrand_shouldReturnFilteredDevices() {
+    void findByBrand_shouldReturnFilteredPagedDevices() {
+        Pageable pageable = PageRequest.of(0, 10);
         List<Device> devices = List.of(Device.builder().id(1L).brand("Samsung").build());
-        List<DeviceResponse> expected = List.of(DeviceResponse.builder().id(1L).brand("Samsung").build());
+        Page<Device> devicePage = new PageImpl<>(devices, pageable, 1);
 
-        when(deviceRepository.findByBrand("Samsung")).thenReturn(devices);
-        when(deviceMapper.toResponseList(devices)).thenReturn(expected);
+        when(deviceRepository.findByBrand("Samsung", pageable)).thenReturn(devicePage);
+        when(deviceMapper.toResponse(any(Device.class))).thenReturn(DeviceResponse.builder().id(1L).brand("Samsung").build());
 
-        List<DeviceResponse> result = deviceService.findByBrand("Samsung");
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getBrand()).isEqualTo("Samsung");
+        Page<DeviceResponse> result = deviceService.findByBrand("Samsung", pageable);
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.getContent().get(0).getBrand()).isEqualTo("Samsung");
     }
 
     @Test
-    void findByState_shouldReturnFilteredDevices() {
+    void findByState_shouldReturnFilteredPagedDevices() {
+        Pageable pageable = PageRequest.of(0, 10);
         List<Device> devices = List.of(Device.builder().id(1L).state(DeviceState.AVAILABLE).build());
-        List<DeviceResponse> expected = List.of(DeviceResponse.builder().id(1L).state(DeviceState.AVAILABLE).build());
+        Page<Device> devicePage = new PageImpl<>(devices, pageable, 1);
 
-        when(deviceRepository.findByState(DeviceState.AVAILABLE)).thenReturn(devices);
-        when(deviceMapper.toResponseList(devices)).thenReturn(expected);
+        when(deviceRepository.findByState(DeviceState.AVAILABLE, pageable)).thenReturn(devicePage);
+        when(deviceMapper.toResponse(any(Device.class))).thenReturn(DeviceResponse.builder().id(1L).state(DeviceState.AVAILABLE).build());
 
-        assertThat(deviceService.findByState(DeviceState.AVAILABLE)).hasSize(1);
+        Page<DeviceResponse> result = deviceService.findByState(DeviceState.AVAILABLE, pageable);
+        assertThat(result.getTotalElements()).isEqualTo(1);
     }
 
     // ── delete ────────────────────────────────────────────────────────────────

@@ -6,8 +6,8 @@ import com.devices.api.dto.request.PatchDeviceRequest;
 import com.devices.api.dto.request.UpdateDeviceRequest;
 import com.devices.api.dto.response.DeviceResponse;
 import com.devices.api.model.DeviceState;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface DeviceService {
 
@@ -19,11 +19,11 @@ public interface DeviceService {
 
     DeviceResponse findById(Long id);
 
-    List<DeviceResponse> findAll();
+    Page<DeviceResponse> findAll(Pageable pageable);
 
-    List<DeviceResponse> findByBrand(String brand);
+    Page<DeviceResponse> findByBrand(String brand, Pageable pageable);
 
-    List<DeviceResponse> findByState(DeviceState state);
+    Page<DeviceResponse> findByState(DeviceState state, Pageable pageable);
 
     void delete(Long id);
 }

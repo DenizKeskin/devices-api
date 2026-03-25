@@ -12,10 +12,10 @@ import com.devices.api.model.DeviceState;
 import com.devices.api.repository.DeviceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Slf4j
 @Service
@@ -101,20 +101,20 @@ public class DeviceServiceImpl implements DeviceService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<DeviceResponse> findAll() {
-        return deviceMapper.toResponseList(deviceRepository.findAll());
+    public Page<DeviceResponse> findAll(Pageable pageable) {
+        return deviceRepository.findAll(pageable).map(deviceMapper::toResponse);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<DeviceResponse> findByBrand(String brand) {
-        return deviceMapper.toResponseList(deviceRepository.findByBrand(brand));
+    public Page<DeviceResponse> findByBrand(String brand, Pageable pageable) {
+        return deviceRepository.findByBrand(brand, pageable).map(deviceMapper::toResponse);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<DeviceResponse> findByState(DeviceState state) {
-        return deviceMapper.toResponseList(deviceRepository.findByState(state));
+    public Page<DeviceResponse> findByState(DeviceState state, Pageable pageable) {
+        return deviceRepository.findByState(state, pageable).map(deviceMapper::toResponse);
     }
 
     @Override

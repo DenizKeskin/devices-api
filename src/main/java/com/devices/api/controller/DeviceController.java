@@ -14,14 +14,15 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springdoc.core.annotations.ParameterObject;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/devices")
@@ -105,22 +106,23 @@ public class DeviceController {
         return ResponseEntity.ok(deviceService.findById(id));
     }
 
-    @Operation(summary = "List all devices", description = "Optionally filter by brand or state")
+    @Operation(summary = "List all devices", description = "Optionally filter by brand or state. Supports pagination: ?page=0&size=10&sort=brand,asc")
     @ApiResponse(responseCode = "200", description = "Device list returned")
     @GetMapping
-    public ResponseEntity<List<DeviceResponse>> findAll(
+    public ResponseEntity<Page<DeviceResponse>> findAll(
             @Parameter(description = "Filter by brand") @RequestParam(required = false) String brand,
-            @Parameter(description = "Filter by state") @RequestParam(required = false) DeviceState state) {
+            @Parameter(description = "Filter by state") @RequestParam(required = false) DeviceState state,
+            @ParameterObject Pageable pageable) {
 
-        log.info("Fetch devices request: brand='{}', state={}", brand, state);
+        log.info("Fetch devices request: brand='{}', state={}, page={}, size={}", brand, state, pageable.getPageNumber(), pageable.getPageSize());
 
         if (brand != null) {
-            return ResponseEntity.ok(deviceService.findByBrand(brand));
+            return ResponseEntity.ok(deviceService.findByBrand(brand, pageable));
         }
         if (state != null) {
-            return ResponseEntity.ok(deviceService.findByState(state));
+            return ResponseEntity.ok(deviceService.findByState(state, pageable));
         }
-        return ResponseEntity.ok(deviceService.findAll());
+        return ResponseEntity.ok(deviceService.findAll(pageable));
     }
 
     @Operation(summary = "Delete a device")

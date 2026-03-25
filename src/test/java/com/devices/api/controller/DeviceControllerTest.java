@@ -121,7 +121,8 @@ class DeviceControllerTest {
 
         mockMvc.perform(get("/api/v1/devices"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)));
+                .andExpect(jsonPath("$.content", hasSize(2)))
+                .andExpect(jsonPath("$.totalElements").value(2));
     }
 
     @Test
@@ -131,8 +132,8 @@ class DeviceControllerTest {
 
         mockMvc.perform(get("/api/v1/devices").param("brand", "Samsung"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].brand").value("Samsung"));
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].brand").value("Samsung"));
     }
 
     @Test
@@ -142,8 +143,8 @@ class DeviceControllerTest {
 
         mockMvc.perform(get("/api/v1/devices").param("state", "AVAILABLE"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].state").value("AVAILABLE"));
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].state").value("AVAILABLE"));
     }
 
     // ── PUT /api/v1/devices/{id} ──────────────────────────────────────────────
