@@ -6,6 +6,7 @@ import com.devices.api.dto.request.UpdateDeviceRequest;
 import com.devices.api.dto.response.DeviceResponse;
 import com.devices.api.exception.DeviceInUseException;
 import com.devices.api.exception.DeviceNotFoundException;
+import com.devices.api.exception.DeviceVersionMismatchException;
 import com.devices.api.mapper.DeviceMapper;
 import com.devices.api.model.Device;
 import com.devices.api.model.DeviceState;
@@ -65,7 +66,7 @@ class DeviceServiceImplTest {
 
     @Test
     void update_shouldUpdateSuccessfully() {
-        Device device = Device.builder().id(1L).name("Old").brand("OldBrand").state(DeviceState.AVAILABLE).build();
+        Device device = Device.builder().id(1L).name("Old").brand("OldBrand").state(DeviceState.AVAILABLE).version(0L).build();
         UpdateDeviceRequest request = new UpdateDeviceRequest("New", "NewBrand", DeviceState.IN_USE, 0L);
         Device saved = Device.builder().id(1L).name("New").brand("NewBrand").state(DeviceState.IN_USE).build();
         DeviceResponse expected = DeviceResponse.builder().id(1L).name("New").brand("NewBrand").state(DeviceState.IN_USE).build();
@@ -78,6 +79,20 @@ class DeviceServiceImplTest {
     }
 
     @Test
+    void update_shouldThrowDeviceVersionMismatchException_whenVersionMismatch() {
+        Device device = Device.builder().id(1L).name("Old").brand("Brand").state(DeviceState.AVAILABLE).version(3L).build();
+        UpdateDeviceRequest request = new UpdateDeviceRequest("New", "Brand", DeviceState.AVAILABLE, 0L);
+
+        when(deviceRepository.findById(1L)).thenReturn(Optional.of(device));
+
+        assertThatThrownBy(() -> deviceService.update(1L, request))
+                .isInstanceOf(DeviceVersionMismatchException.class)
+                .hasMessageContaining("provided version 0")
+                .hasMessageContaining("current version is 3");
+        verify(deviceRepository, never()).save(any());
+    }
+
+    @Test
     void update_shouldThrowDeviceNotFoundException_whenDeviceNotFound() {
         when(deviceRepository.findById(99L)).thenReturn(Optional.empty());
 
@@ -87,7 +102,7 @@ class DeviceServiceImplTest {
 
     @Test
     void update_shouldThrowDeviceInUseException_whenInUseAndNameChanged() {
-        Device device = Device.builder().id(1L).name("Old").brand("Brand").state(DeviceState.IN_USE).build();
+        Device device = Device.builder().id(1L).name("Old").brand("Brand").state(DeviceState.IN_USE).version(0L).build();
         UpdateDeviceRequest request = new UpdateDeviceRequest("New", "Brand", DeviceState.IN_USE, 0L);
 
         when(deviceRepository.findById(1L)).thenReturn(Optional.of(device));
@@ -99,7 +114,7 @@ class DeviceServiceImplTest {
 
     @Test
     void update_shouldThrowDeviceInUseException_whenInUseAndBrandChanged() {
-        Device device = Device.builder().id(1L).name("Name").brand("OldBrand").state(DeviceState.IN_USE).build();
+        Device device = Device.builder().id(1L).name("Name").brand("OldBrand").state(DeviceState.IN_USE).version(0L).build();
         UpdateDeviceRequest request = new UpdateDeviceRequest("Name", "NewBrand", DeviceState.IN_USE, 0L);
 
         when(deviceRepository.findById(1L)).thenReturn(Optional.of(device));
@@ -111,7 +126,7 @@ class DeviceServiceImplTest {
 
     @Test
     void update_shouldSucceed_whenInUseButNameAndBrandUnchanged() {
-        Device device = Device.builder().id(1L).name("Name").brand("Brand").state(DeviceState.IN_USE).build();
+        Device device = Device.builder().id(1L).name("Name").brand("Brand").state(DeviceState.IN_USE).version(0L).build();
         UpdateDeviceRequest request = new UpdateDeviceRequest("Name", "Brand", DeviceState.INACTIVE, 0L);
         Device saved = Device.builder().id(1L).name("Name").brand("Brand").state(DeviceState.INACTIVE).build();
         DeviceResponse expected = DeviceResponse.builder().id(1L).state(DeviceState.INACTIVE).build();
@@ -127,7 +142,7 @@ class DeviceServiceImplTest {
 
     @Test
     void patch_shouldApplyPartialUpdate() {
-        Device device = Device.builder().id(1L).name("Old").brand("Brand").state(DeviceState.AVAILABLE).build();
+        Device device = Device.builder().id(1L).name("Old").brand("Brand").state(DeviceState.AVAILABLE).version(0L).build();
         PatchDeviceRequest request = PatchDeviceRequest.builder().version(0L).name("New").build();
         Device saved = Device.builder().id(1L).name("New").brand("Brand").state(DeviceState.AVAILABLE).build();
         DeviceResponse expected = DeviceResponse.builder().id(1L).name("New").build();
@@ -141,7 +156,7 @@ class DeviceServiceImplTest {
 
     @Test
     void patch_shouldThrowDeviceInUseException_whenInUseAndNameChanged() {
-        Device device = Device.builder().id(1L).name("Old").brand("Brand").state(DeviceState.IN_USE).build();
+        Device device = Device.builder().id(1L).name("Old").brand("Brand").state(DeviceState.IN_USE).version(0L).build();
         PatchDeviceRequest request = PatchDeviceRequest.builder().version(0L).name("New").build();
 
         when(deviceRepository.findById(1L)).thenReturn(Optional.of(device));
@@ -153,7 +168,7 @@ class DeviceServiceImplTest {
 
     @Test
     void patch_shouldSucceed_whenInUseAndOnlyStateChanged() {
-        Device device = Device.builder().id(1L).name("Name").brand("Brand").state(DeviceState.IN_USE).build();
+        Device device = Device.builder().id(1L).name("Name").brand("Brand").state(DeviceState.IN_USE).version(0L).build();
         PatchDeviceRequest request = PatchDeviceRequest.builder().version(0L).state(DeviceState.AVAILABLE).build();
         Device saved = Device.builder().id(1L).name("Name").brand("Brand").state(DeviceState.AVAILABLE).build();
         DeviceResponse expected = DeviceResponse.builder().id(1L).state(DeviceState.AVAILABLE).build();
@@ -163,6 +178,20 @@ class DeviceServiceImplTest {
         when(deviceMapper.toResponse(saved)).thenReturn(expected);
 
         assertThat(deviceService.patch(1L, request).getState()).isEqualTo(DeviceState.AVAILABLE);
+    }
+
+    @Test
+    void patch_shouldThrowDeviceVersionMismatchException_whenVersionMismatch() {
+        Device device = Device.builder().id(1L).name("Old").brand("Brand").state(DeviceState.AVAILABLE).version(3L).build();
+        PatchDeviceRequest request = PatchDeviceRequest.builder().version(0L).name("New").build();
+
+        when(deviceRepository.findById(1L)).thenReturn(Optional.of(device));
+
+        assertThatThrownBy(() -> deviceService.patch(1L, request))
+                .isInstanceOf(DeviceVersionMismatchException.class)
+                .hasMessageContaining("provided version 0")
+                .hasMessageContaining("current version is 3");
+        verify(deviceRepository, never()).save(any());
     }
 
     // ── findById ──────────────────────────────────────────────────────────────

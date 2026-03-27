@@ -10,7 +10,11 @@ import org.mapstruct.Mapping;
 public interface DeviceMapper {
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "state", ignore = true)
+    @Mapping(target = "version", ignore = true)
     @Mapping(target = "creationTime", ignore = true)
+    @Mapping(target = "updateTime", ignore = true)
+    @Mapping(target = "deleteTime", ignore = true)
     Device toEntity(CreateDeviceRequest request);
 
     DeviceResponse toResponse(Device device);

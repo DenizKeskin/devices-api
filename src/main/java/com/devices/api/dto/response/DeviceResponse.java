@@ -33,4 +33,7 @@ public class DeviceResponse {
 
     @Schema(description = "Creation timestamp")
     private OffsetDateTime creationTime;
+
+    @Schema(description = "Last update timestamp")
+    private OffsetDateTime updateTime;
 }

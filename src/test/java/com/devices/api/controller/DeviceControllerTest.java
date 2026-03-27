@@ -163,6 +163,19 @@ class DeviceControllerTest {
     }
 
     @Test
+    void updateDevice_shouldReturn409_whenVersionMismatch() throws Exception {
+        Device device = saveDevice("Galaxy S24", "Samsung", DeviceState.AVAILABLE);
+        UpdateDeviceRequest request = new UpdateDeviceRequest("Galaxy S25", "Samsung", DeviceState.AVAILABLE, device.getVersion() + 1);
+
+        mockMvc.perform(put("/api/v1/devices/{id}", device.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("current version is")));
+    }
+
+    @Test
     void updateDevice_shouldReturn404_whenNotFound() throws Exception {
         UpdateDeviceRequest request = new UpdateDeviceRequest("Name", "Brand", DeviceState.AVAILABLE, 0L);
 
@@ -225,6 +238,22 @@ class DeviceControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict());
+    }
+
+    @Test
+    void patchDevice_shouldReturn409_whenVersionMismatch() throws Exception {
+        Device device = saveDevice("Galaxy S24", "Samsung", DeviceState.AVAILABLE);
+        PatchDeviceRequest request = PatchDeviceRequest.builder()
+                .version(device.getVersion() + 1)
+                .name("Galaxy S25")
+                .build();
+
+        mockMvc.perform(patch("/api/v1/devices/{id}", device.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("current version is")));
     }
 
     @Test
@@ -311,5 +340,30 @@ class DeviceControllerTest {
         mockMvc.perform(delete("/api/v1/devices/{id}", device.getId()))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409));
+    }
+
+    @Test
+    void deleteDevice_shouldReturn404_onSubsequentGet() throws Exception {
+        Device device = saveDevice("Galaxy S24", "Samsung", DeviceState.AVAILABLE);
+
+        mockMvc.perform(delete("/api/v1/devices/{id}", device.getId()))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/v1/devices/{id}", device.getId()))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deleteDevice_shouldNotAppearInFindAll() throws Exception {
+        Device device = saveDevice("Galaxy S24", "Samsung", DeviceState.AVAILABLE);
+        saveDevice("iPhone 15", "Apple", DeviceState.AVAILABLE);
+
+        mockMvc.perform(delete("/api/v1/devices/{id}", device.getId()))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/v1/devices"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].name").value("iPhone 15"));
     }
 }

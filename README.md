@@ -102,7 +102,8 @@ GET /api/v1/devices?page=0&size=10&sort=brand,asc
 - Creation time is set automatically and **cannot be updated**
 - `name` and `brand` **cannot be updated** if the device is `IN_USE`
 - `IN_USE` devices **cannot be deleted**
-- Optimistic locking is enforced — `version` field must be provided on update/patch requests
+- Optimistic locking is enforced — `version` field must be provided and must match the current version, otherwise a `409 Conflict` is returned
+- Deletion is **soft delete** — records are not physically removed, `delete_time` is set instead and filtered out from all queries
 
 ---
 
@@ -201,5 +202,4 @@ The workflow file is located at `.github/workflows/ci.yml`.
 - Add authentication and authorization (e.g. Spring Security + JWT)
 - Add rate limiting
 - Add MDC / correlation ID for distributed tracing
-- Add soft delete support
 - Expose metrics to Prometheus + Grafana

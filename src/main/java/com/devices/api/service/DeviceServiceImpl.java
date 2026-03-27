@@ -6,6 +6,7 @@ import com.devices.api.dto.request.UpdateDeviceRequest;
 import com.devices.api.dto.response.DeviceResponse;
 import com.devices.api.exception.DeviceInUseException;
 import com.devices.api.exception.DeviceNotFoundException;
+import com.devices.api.exception.DeviceVersionMismatchException;
 import com.devices.api.mapper.DeviceMapper;
 import com.devices.api.model.Device;
 import com.devices.api.model.DeviceState;
@@ -16,6 +17,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -40,10 +43,14 @@ public class DeviceServiceImpl implements DeviceService {
     public DeviceResponse update(Long id, UpdateDeviceRequest request) {
         Device device = findDeviceOrThrow(id);
 
-        boolean isNameChanged = !device.getName().equals(request.getName());
-        boolean isBrandChanged = !device.getBrand().equals(request.getBrand());
+        if (!Objects.equals(request.getVersion(), device.getVersion())) {
+            throw new DeviceVersionMismatchException(request.getVersion(), device.getVersion());
+        }
 
-        if (DeviceState.IN_USE.equals(device.getState()) && (isNameChanged || isBrandChanged)) {
+        boolean isNameChanged = !Objects.equals(device.getName(), request.getName());
+        boolean isBrandChanged = !Objects.equals(device.getBrand(), request.getBrand());
+
+        if (Objects.equals(DeviceState.IN_USE, device.getState()) && (isNameChanged || isBrandChanged)) {
             throw new DeviceInUseException("Name or brand cannot be updated while device is IN_USE");
         }
 
@@ -60,6 +67,11 @@ public class DeviceServiceImpl implements DeviceService {
     @Transactional
     public DeviceResponse patch(Long id, PatchDeviceRequest request) {
         Device device = findDeviceOrThrow(id);
+
+        if (!Objects.equals(request.getVersion(), device.getVersion())) {
+            throw new DeviceVersionMismatchException(request.getVersion(), device.getVersion());
+        }
+
         validatePatchRequest(device, request);
         applyPatch(device, request);
 
@@ -71,12 +83,12 @@ public class DeviceServiceImpl implements DeviceService {
 
     private void validatePatchRequest(Device device, PatchDeviceRequest request) {
         boolean isNameChanged =
-                request.getName() != null && !device.getName().equals(request.getName());
+                request.getName() != null && !Objects.equals(device.getName(), request.getName());
 
         boolean isBrandChanged =
-                request.getBrand() != null && !device.getBrand().equals(request.getBrand());
+                request.getBrand() != null && !Objects.equals(device.getBrand(), request.getBrand());
 
-        if (DeviceState.IN_USE.equals(device.getState()) && (isNameChanged || isBrandChanged)) {
+        if (Objects.equals(DeviceState.IN_USE, device.getState()) && (isNameChanged || isBrandChanged)) {
             throw new DeviceInUseException("Name or brand cannot be updated while device is IN_USE");
         }
     }
@@ -122,7 +134,7 @@ public class DeviceServiceImpl implements DeviceService {
     public void delete(Long id) {
         Device device = findDeviceOrThrow(id);
 
-        if (DeviceState.IN_USE.equals(device.getState())) {
+        if (Objects.equals(DeviceState.IN_USE, device.getState())) {
             throw new DeviceInUseException("Device cannot be deleted while it is IN_USE");
         }
 

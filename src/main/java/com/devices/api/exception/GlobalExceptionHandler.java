@@ -77,6 +77,14 @@ public class GlobalExceptionHandler {
     }
 
     // ── Locking Exceptions ────────────────────────────────────────────────────
+
+    @ExceptionHandler(DeviceVersionMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleVersionMismatch(
+            DeviceVersionMismatchException ex, HttpServletRequest request) {
+        log.warn("Version mismatch: {}", ex.getMessage());
+        return build(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
     @ExceptionHandler(OptimisticLockException.class)
     public ResponseEntity<ErrorResponse> handleOptimisticLock(
             OptimisticLockException ex, HttpServletRequest request) {
